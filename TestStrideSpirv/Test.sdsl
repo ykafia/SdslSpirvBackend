@@ -1,0 +1,4 @@
+shader TestShader
+{
+    float x = 0;
+};
