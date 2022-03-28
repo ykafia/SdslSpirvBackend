@@ -10,7 +10,7 @@ var grammar = ShaderParser.GetGrammar<StrideGrammar>();
 
 var parser = ShaderParser.GetParser<StrideGrammar>();
 
-var shader = File.ReadAllText("./Test.sdsl");
+var shaderText = File.ReadAllText("./Test.sdsl");
 
-var parsed = parser.Parse(shader, "./Test.sdsl");
-Console.WriteLine(parsed);
+var shader = parser.Parse(shaderText, "./Test.sdsl").Shader;
+Console.WriteLine(shader);

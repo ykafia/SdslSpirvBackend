@@ -1,1 +1,0 @@
-﻿global using SpvWord = System.UInt32;
