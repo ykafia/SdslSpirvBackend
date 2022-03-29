@@ -22,6 +22,9 @@ var shader = parser.Parse(shaderText, sdslPath).Shader;
 Console.WriteLine(shader.Declarations.Where(x => x is ShaderClassType).Count());
 Console.WriteLine(shader);
 
+new TestModule().Construct().Generate().ToGlsl();
+
+
 // var vertPath = @"C:\Users\youness_kafia\Documents\GitHub\SdslSpirvBackend\TestStrideSpirv\Shaders\GLSL\tri.vert.spv";
 
 // System.IO.File.ReadAllBytes(vertPath).ToGlsl();

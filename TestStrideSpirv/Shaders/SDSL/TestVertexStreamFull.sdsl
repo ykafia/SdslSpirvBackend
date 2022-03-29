@@ -5,6 +5,7 @@ shader TestVertexStreamFull
 
     void VSMain()
     {
+        float x = 1.0;
         streams.ScreenPosition = 2.0 * streams.Position;
     }
 };
