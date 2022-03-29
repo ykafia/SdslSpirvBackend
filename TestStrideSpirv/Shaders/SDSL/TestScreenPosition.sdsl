@@ -1,0 +1,4 @@
+shader TestScreenPosition
+{
+    stream float4 ScreenPosition;
+};

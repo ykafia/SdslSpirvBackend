@@ -1,0 +1,10 @@
+shader TestVertexStreamFull
+{
+    stream float4 Position;
+    stream float4 ScreenPosition;
+
+    void VSMain()
+    {
+        streams.ScreenPosition = 2.0 * streams.Position;
+    }
+};

@@ -1,0 +1,10 @@
+shader TestVertexStreamMixin : TestScreenPosition
+{
+    stream float4 Position;
+
+    void VSMain()
+    {
+        // TODO: remove extra code for this type check (float * floatX)
+        streams.ScreenPosition = 2.0*streams.Position;
+    }
+};
