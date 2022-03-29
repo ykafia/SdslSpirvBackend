@@ -17,6 +17,5 @@ namespace Stride.Shaders.Spirv
         {
             
         }
-
     }
 }
