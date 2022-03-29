@@ -56,12 +56,19 @@ unsafe
     spvc_context_parse_spirv(context, spirv, word_count, &ir);
 
     // Hand it off to a compiler instance and give it ownership of the IR.
-    spvc_context_create_compiler(context, spvc_backend.Glsl, ir, spvc_capture_mode.TakeOwnership, &compiler_glsl);
+    var spvResult = spvc_context_create_compiler(context, spvc_backend.Hlsl, ir, spvc_capture_mode.TakeOwnership, &compiler_glsl);
+    if(spvResult != spvc_result.SPVC_SUCCESS)
+        throw new System.Exception("Error giving ownership of IR : " + spvResult);
 
     // Do some basic reflection.
-    spvc_compiler_create_shader_resources(compiler_glsl, &resources);
-    spvc_resources_get_resource_list_for_type(resources, spvc_resource_type.UniformBuffer, (spvc_reflected_resource*)&list, &count);
-
+    spvResult = spvc_compiler_create_shader_resources(compiler_glsl, &resources);
+    if(spvResult != spvc_result.SPVC_SUCCESS)
+        throw new System.Exception("Basic reflect failure : " + spvResult);
+    spvResult = spvc_resources_get_resource_list_for_type(resources, spvc_resource_type.UniformBuffer, (spvc_reflected_resource*)&list, &count);
+    if(spvResult != spvc_result.SPVC_SUCCESS)
+        throw new System.Exception("Error giving ownership of IR : " + spvResult);
+    
+    
     for (uint i = 0; i < count; i++)
     {
         Console.WriteLine("ID: {0}, BaseTypeID: {1}, TypeID: {2}, Name: {3}", list[i].id, list[i].base_type_id, list[i].type_id, GetString(list[i].name));
@@ -78,12 +85,14 @@ unsafe
 
     // Modify options.
     spvc_compiler_create_compiler_options(compiler_glsl, &options);
-    spvc_compiler_options_set_uint(options, spvc_compiler_option.GlslVersion, 450);
-    spvc_compiler_options_set_bool(options, spvc_compiler_option.GlslEs, false);
+    spvc_compiler_options_set_uint(options, spvc_compiler_option.HlslShaderModel, 50);
+    // spvc_compiler_options_set_bool(options, spvc_compiler_option.GlslEs, false);
     spvc_compiler_install_compiler_options(compiler_glsl, options);
 
     byte* result = default;
-    spvc_compiler_compile(compiler_glsl, (byte*)&result);
+    spvResult = spvc_compiler_compile(compiler_glsl, (byte*)&result);
+    if(spvResult != spvc_result.SPVC_SUCCESS)
+        throw new System.Exception("Error giving ownership of IR : " + spvResult);
     Console.WriteLine("Cross-compiled source: {0}", GetString(result));
 
     // Frees all memory we allocated so far.
