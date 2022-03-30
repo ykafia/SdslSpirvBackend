@@ -2,3 +2,6 @@
 .ionide/
 bin/
 obj/
+Shaders/SDSL/bundle/
+Shaders/SDSL/tmp/
+Shaders/SDSL/index

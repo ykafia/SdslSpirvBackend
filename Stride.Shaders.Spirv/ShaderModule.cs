@@ -12,9 +12,9 @@ namespace Stride.Shaders.Spirv
     {
         Shader program;
         Dictionary<string,Instruction> TypeRegister = new();
-        Dictionary<string, Instruction> InputRegister = new();
-        Dictionary<string, Instruction> OutputRegister = new();
-        Dictionary<string, Instruction> StreamsRegister = new();
+        Instruction InputType;
+        Instruction OutputType;
+        Instruction Streams;
         
         
 
@@ -27,44 +27,27 @@ namespace Stride.Shaders.Spirv
         {
             AddCapability(Capability.Shader);
             SetMemoryModel(AddressingModel.Logical, MemoryModel.Simple);
+            
+            // Generate types needed
             foreach(StructType p in program.Declarations.Where(x => x is StructType))
             {
                 if(p.Name.Text.Contains("INPUT"))
-                    GenerateInputs(p);
+                    InputType = TypePointer(StorageClass.Input, GenerateStructType(p));
                 if(p.Name.Text.Contains("OUTPUT"))
-                    GenerateOutputs(p);
+                    OutputType = TypePointer(StorageClass.Output, GenerateStructType(p));
                 if(p.Name.Text.Contains("STREAMS"))
-                    GenerateStream(p);
+                    Streams = GenerateStructType(p);
+                else
+                    GenerateStructType(p);
             }
+            // Generate Main method
 
             // TODO: add void function
         }
-        public void GenerateInputs(StructType s)
+        public Instruction GenerateStructType(StructType s)
         {
-            s.Fields.ForEach(
-                f =>
-                {
-                    InputRegister.Add(f.Name,TypePointer(StorageClass.Input,GetOrCreateSPVType(f.Type.Name)));
-                }
-            );
-        }
-        public void GenerateOutputs(StructType s)
-        {
-            s.Fields.ForEach(
-                f =>
-                {
-                    OutputRegister.Add(f.Name,TypePointer(StorageClass.Output,GetOrCreateSPVType(f.Type.Name)));
-                }
-            );
-        }
-        public void GenerateStream(StructType s)
-        {
-            s.Fields.ForEach(
-                f =>
-                {
-                    StreamsRegister.Add(f.Name,TypePointer(StorageClass.Output,GetOrCreateSPVType(f.Type.Name)));
-                }
-            );
+            TypeRegister.Add(s.Name.Text, TypeStruct(true,s.Fields.Select(f => GetOrCreateSPVType(f.Type.Name)).ToArray()));
+            return TypeRegister[s.Name.Text];
         }
         public Instruction GetOrCreateSPVType(string t)
         {
