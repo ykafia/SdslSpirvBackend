@@ -18,15 +18,18 @@ namespace TestStrideSpirv
                 Instruction vec4Type = TypeVector(floatType, 4);
                 Instruction vec4OutputPtrType = TypePointer(StorageClass.Output, vec4Type);
 
+                Instruction someVar = Variable(floatType, StorageClass.Generic);
                 Instruction inputTest = Variable(floatInputType, StorageClass.Input);
                 Instruction outputTest = Variable(floatOutputType, StorageClass.Output);
                 Instruction outputColor = Variable(vec4OutputPtrType, StorageClass.Output);
 
                 Name(inputTest, "inputTest");
                 Name(outputColor, "outputColor");
+                Name(someVar, "my_var");
                 AddGlobalVariable(inputTest);
                 AddGlobalVariable(outputTest);
                 AddGlobalVariable(outputColor);
+                AddLocalVariable(someVar);
 
                 Instruction rColor = Constant(floatType, 0.5f);
                 Instruction gColor = Constant(floatType, 0.0f);
@@ -45,6 +48,7 @@ namespace TestStrideSpirv
 
                 Instruction resultSqrt = GlslSqrt(floatType, tempInput);
 
+                Store(someVar, Constant(floatType,0.0));
                 Store(outputTest, resultSqrt);
                 Store(outputColor, compositeColor);
 

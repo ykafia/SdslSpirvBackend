@@ -4,7 +4,7 @@ using static Spv.Specification;
 using Stride.Core.Shaders.Ast;
 using Stride.Core.Shaders.Ast.Stride;
 using StrideVariable = Stride.Core.Shaders.Ast.Variable;
-
+using Stride.Core.Shaders.Ast.Hlsl;
 
 namespace Stride.Shaders.Spirv
 {
@@ -12,8 +12,8 @@ namespace Stride.Shaders.Spirv
     {
         Shader program;
         Dictionary<string,Instruction> TypeRegister = new();
-        Instruction InputType;
-        Instruction OutputType;
+        (Instruction PtrType,Instruction RawType) InputType;
+        (Instruction PtrType,Instruction RawType) OutputType;
         Instruction Streams;
         
         
@@ -23,30 +23,63 @@ namespace Stride.Shaders.Spirv
             this.program = program;
         }
 
-        public void Construct(StageEntryPoint entry)
+        public ShaderModule Construct(StageEntryPoint entry)
         {
             AddCapability(Capability.Shader);
             SetMemoryModel(AddressingModel.Logical, MemoryModel.Simple);
-            
+            TypeRegister["void"] = TypeVoid();
             // Generate types needed
             foreach(StructType p in program.Declarations.Where(x => x is StructType))
             {
                 if(p.Name.Text.Contains("INPUT"))
-                    InputType = TypePointer(StorageClass.Input, GenerateStructType(p));
-                if(p.Name.Text.Contains("OUTPUT"))
-                    OutputType = TypePointer(StorageClass.Output, GenerateStructType(p));
-                if(p.Name.Text.Contains("STREAMS"))
-                    Streams = GenerateStructType(p);
+                    InputType = (TypePointer(StorageClass.Input, GetOrCreateStructType(p)),GetOrCreateStructType(p));
+                else if(p.Name.Text.Contains("OUTPUT"))
+                    OutputType = (TypePointer(StorageClass.Output, GetOrCreateStructType(p)),GetOrCreateStructType(p));
+                else if(p.Name.Text.Contains("STREAMS"))
+                    Streams = GetOrCreateStructType(p);
                 else
-                    GenerateStructType(p);
+                    GetOrCreateStructType(p);
             }
+
+            Name(InputType.RawType, "VS_INPUT");
+            Name(OutputType.RawType, "VS_OUTPUT");
+            Name(Streams, "VS_STREAM");
+            
+            
+
+            // Input handling
+
+            Instruction inputv = Variable(InputType.PtrType, StorageClass.Input);
+            Instruction outputv = Variable(OutputType.PtrType, StorageClass.Output);
+
+            Name(inputv, "inputTest");
+            Name(outputv, "outputColor");
+            AddGlobalVariable(inputv);
+            AddGlobalVariable(outputv);
+
             // Generate Main method
 
+            MethodDefinition mainMethod = (MethodDefinition)program.Declarations.First(x => x is MethodDefinition);
+            var mainFunctionType = TypeFunction(TypeRegister["void"],true);
+            var mainFunction = Function(TypeRegister["void"],FunctionControlMask.MaskNone,mainFunctionType);
+            AddLabel(Label());
+            Instruction tmpIn = Load(InputType.RawType,inputv);
+            Dictionary<string,Instruction> variables = new();
+            foreach(var s in mainMethod.Body.Statements)
+            {
+                ConvertStatement(s, ref variables);
+            }
+            Return();
+            FunctionEnd();
+            AddEntryPoint(ExecutionModel.Vertex, mainFunction, "main", inputv, outputv);
+            AddExecutionMode(mainFunction, ExecutionMode.OriginUpperLeft);
+            return this;
             // TODO: add void function
         }
-        public Instruction GenerateStructType(StructType s)
+        public Instruction GetOrCreateStructType(StructType s)
         {
-            TypeRegister.Add(s.Name.Text, TypeStruct(true,s.Fields.Select(f => GetOrCreateSPVType(f.Type.Name)).ToArray()));
+            if(!TypeRegister.ContainsKey(s.Name.Text))
+                TypeRegister.Add(s.Name.Text, TypeStruct(true,s.Fields.Select(f => GetOrCreateSPVType(f.Type.Name)).ToArray()));
             return TypeRegister[s.Name.Text];
         }
         public Instruction GetOrCreateSPVType(string t)
@@ -80,6 +113,33 @@ namespace Stride.Shaders.Spirv
                 "float4" => TypeVector(GetOrCreateSPVType("float"),4),
                 _ => throw new Exception("Type not found")
             };
+        }
+        private void ConvertStatement(Statement s, ref Dictionary<string,Instruction> variables)
+        {
+            if(s is DeclarationStatement ds)
+            {
+                var pvar = ((Variable)ds.Content);
+                var vType = GetOrCreateSPVType(pvar.Type.Name.Text);
+                var variable = Variable(vType,StorageClass.Generic);
+                Name(variable, pvar.Name.Text);
+
+
+                Instruction declaration;
+                Expression expr = ((Variable)ds.Content).InitialValue;
+                if(expr is CastExpression cexp)
+                {
+                    // if(cexp.Target. is Literal l)
+                    if(cexp.From is LiteralExpression l && (int)l.Literal.Value == 0)
+                    {
+                        // declaration = ConstantComposite(vType, );
+                        variables.Add(pvar.Name.Text,variable);
+                        // Load(variable);
+                    }
+                }
+                // new Instruction(Op.OpPtrCastToGeneric)
+
+                
+            }
         }
     }
 }

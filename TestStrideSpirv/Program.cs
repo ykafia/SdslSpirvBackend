@@ -37,7 +37,9 @@ var compiler = new Compiler(source,shaderMixinParser);
 
 ShaderModule sm = compiler.Compile(StageEntryPoint.VSMain,new Stride.Shaders.ShaderMacro[]{});
 
-new TestModule().Construct().Generate().ToGlsl();
+sm.Generate().ToGlsl();
+
+// new TestModule().Construct().Generate().ToGlsl();
 
 
 // var vertPath = @"C:\Users\youness_kafia\Documents\GitHub\SdslSpirvBackend\TestStrideSpirv\Shaders\GLSL\tri.vert.spv";
