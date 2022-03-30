@@ -7,20 +7,32 @@ using Stride.Core.Shaders.Grammar.Stride;
 using SPIRVCross;
 using static SPIRVCross.SPIRV;
 using System.Linq;
-using Stride.Core.Shaders.Ast.Stride;
+using Stride.Core.Storage;
+using Stride.Core.IO;
+using Stride.Shaders;
+using Stride.Shaders.Parser;
+using Stride.Shaders.Parser.Mixins;
+using System.Reflection;
 
 Console.WriteLine("Hello, World!");
 
-var grammar = ShaderParser.GetGrammar<StrideGrammar>();
+var assetPath = "./";
+var mixinName = "TestVertexStreamFull";
 
-var parser = ShaderParser.GetParser<StrideGrammar>();
+var fs = VirtualFileSystem.MountFileSystem(assetPath, "./Shaders/SDSL/");
 
-var sdslPath = "./Shaders/SDSL/TestVertexStreamFull.sdsl";
-var shaderText = File.ReadAllText(sdslPath);
+var db = new ObjectDatabase(assetPath,VirtualFileSystem.ApplicationDatabaseIndexName);
+var dbfp = new DatabaseFileProvider(db);
 
-var shader = parser.Parse(shaderText, sdslPath).Shader;
-Console.WriteLine(shader.Declarations.Where(x => x is ShaderClassType).Count());
-Console.WriteLine(shader);
+var search = await VirtualFileSystem.ListFiles(assetPath,"*.sdsl",VirtualSearchOption.TopDirectoryOnly);
+var shaderMixinParser = new ShaderMixinParser(dbfp);
+shaderMixinParser.SourceManager.LookupDirectoryList.Add(assetPath);
+foreach(var s in search)
+    shaderMixinParser.SourceManager.AddShaderSource(Path.GetFileNameWithoutExtension(s), new StreamReader(VirtualFileSystem.OpenStream(s, VirtualFileMode.Open,VirtualFileAccess.Read)).ReadToEnd(),s);
+
+var source = new ShaderMixinSource();
+source.Mixins.Add(new ShaderClassSource(mixinName));
+var result = shaderMixinParser.Parse(source);
 
 new TestModule().Construct().Generate().ToGlsl();
 

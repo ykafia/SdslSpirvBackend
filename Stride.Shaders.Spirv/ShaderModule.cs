@@ -18,10 +18,10 @@ namespace Stride.Shaders.Spirv
 
         public void Construct(StageEntryPoint entry)
         {
-            foreach(program.Members.Where(x => x is StrideVariable))
-            {
+            // foreach(program.Members.Where(x => x is StrideVariable))
+            // {
                 
-            }
+            // }
 
             // TODO: add void function
         }

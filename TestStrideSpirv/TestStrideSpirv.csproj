@@ -12,7 +12,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Stride.Core.Serialization" Version="4.0.1.1428" />
     <PackageReference Include="Stride.Core.Shaders" Version="4.0.1.1428" />
+    <PackageReference Include="Stride.Shaders.Parser" Version="4.0.1.1428" />
   </ItemGroup>
 
   
