@@ -10,5 +10,9 @@ namespace TestStrideSpirv
         {
             ShaderConverter.ToGlsl(code);
         }
+        public static void ToJson(this byte[] code)
+        {
+            ShaderConverter.ToJson(code);
+        }
     }
 }

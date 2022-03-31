@@ -8,7 +8,7 @@ using Stride.Core.Shaders.Ast.Hlsl;
 
 namespace Stride.Shaders.Spirv
 {
-    public class ShaderModule : Module
+    public partial class ShaderModule : Module
     {
         Shader program;
         Dictionary<string,Instruction> TypeRegister = new();
@@ -28,22 +28,29 @@ namespace Stride.Shaders.Spirv
             AddCapability(Capability.Shader);
             SetMemoryModel(AddressingModel.Logical, MemoryModel.Simple);
             TypeRegister["void"] = TypeVoid();
-            // Generate types needed
+            // Generate declared types
             foreach(StructType p in program.Declarations.Where(x => x is StructType))
             {
                 if(p.Name.Text.Contains("INPUT"))
+                {
                     InputType = (TypePointer(StorageClass.Input, GetOrCreateStructType(p)),GetOrCreateStructType(p));
+                    Name(InputType.RawType, p.Name);
+                }
                 else if(p.Name.Text.Contains("OUTPUT"))
+                {
                     OutputType = (TypePointer(StorageClass.Output, GetOrCreateStructType(p)),GetOrCreateStructType(p));
+                    Name(OutputType.RawType, p.Name);
+                }
                 else if(p.Name.Text.Contains("STREAMS"))
+                {
                     Streams = GetOrCreateStructType(p);
+                    Name(Streams,p.Name);
+                }
                 else
-                    GetOrCreateStructType(p);
+                {
+                    Name(GetOrCreateStructType(p), p.Name);
+                }
             }
-
-            Name(InputType.RawType, "VS_INPUT");
-            Name(OutputType.RawType, "VS_OUTPUT");
-            Name(Streams, "VS_STREAM");
             
             
 
@@ -77,9 +84,16 @@ namespace Stride.Shaders.Spirv
             // TODO: add void function
         }
         public Instruction GetOrCreateStructType(StructType s)
-        {
+        {   
+            
             if(!TypeRegister.ContainsKey(s.Name.Text))
+            {
                 TypeRegister.Add(s.Name.Text, TypeStruct(true,s.Fields.Select(f => GetOrCreateSPVType(f.Type.Name)).ToArray()));
+                for(int i =0; i< s.Fields.Count; i++)
+                {
+                    MemberName(TypeRegister[s.Name.Text],i,s.Fields[i].Name.Text);
+                }
+            }
             return TypeRegister[s.Name.Text];
         }
         public Instruction GetOrCreateSPVType(string t)
@@ -133,7 +147,8 @@ namespace Stride.Shaders.Spirv
                     {
                         // declaration = ConstantComposite(vType, );
                         variables.Add(pvar.Name.Text,variable);
-                        // Load(variable);
+                        AddLocalVariable(variable);
+                        // Store(variable,new Instruction(Op.OpConstant));
                     }
                 }
                 // new Instruction(Op.OpPtrCastToGeneric)

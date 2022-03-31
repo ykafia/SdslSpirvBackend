@@ -42,6 +42,6 @@ sm.Generate().ToGlsl();
 // new TestModule().Construct().Generate().ToGlsl();
 
 
-// var vertPath = @"C:\Users\youness_kafia\Documents\GitHub\SdslSpirvBackend\TestStrideSpirv\Shaders\GLSL\tri.vert.spv";
+// var vertPath = @".\Shaders\GLSL\tri.frag.spv";
 
-// System.IO.File.ReadAllBytes(vertPath).ToGlsl();
+// System.IO.File.ReadAllBytes(vertPath).ToJson();
