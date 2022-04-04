@@ -13,6 +13,7 @@ namespace TestStrideSpirv
                 SetMemoryModel(AddressingModel.Logical, MemoryModel.Simple);
 
                 Instruction floatType = TypeFloat(32);
+                Instruction floatType2 = TypeFloat(32);
                 Instruction floatInputType = TypePointer(StorageClass.Input, floatType);
                 Instruction floatOutputType = TypePointer(StorageClass.Output, floatType);
                 Instruction vec4Type = TypeVector(floatType, 4);
@@ -22,6 +23,18 @@ namespace TestStrideSpirv
                 Instruction inputTest = Variable(floatInputType, StorageClass.Input);
                 Instruction outputTest = Variable(floatOutputType, StorageClass.Output);
                 Instruction outputColor = Variable(vec4OutputPtrType, StorageClass.Output);
+
+                Instruction structType = TypeStruct(true,vec4Type, vec4Type);
+                TypePointer(StorageClass.Function,structType,false);
+                Name(structType,"MyStruct");
+                MemberName(structType,0,"x");
+                MemberName(structType,1,"y");
+                Instruction structType2 = TypeStruct(true,vec4Type, vec4Type);
+                TypePointer(StorageClass.Function,structType2,false);
+                Name(structType2,"MyStruct");
+                MemberName(structType2,0,"x");
+                MemberName(structType2,1,"z");
+                
 
                 Name(inputTest, "inputTest");
                 Name(outputColor, "outputColor");

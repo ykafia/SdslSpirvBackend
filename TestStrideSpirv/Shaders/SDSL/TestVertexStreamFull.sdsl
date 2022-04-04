@@ -1,11 +1,18 @@
 shader TestVertexStreamFull
 {
-    stream float4 Position;
+    struct MyStruct
+    {
+        float a;
+        float b;
+        float c;
+    };
+    stream MyStruct Position;
     stream float4 ScreenPosition;
 
     void VSMain()
     {
         float x = 1.0;
-        streams.ScreenPosition = 2.0 * streams.Position;
+        MyStruct myPos = streams.Position;
+        streams.ScreenPosition.x = 2.0 * myPos.a;
     }
 };

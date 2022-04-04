@@ -19,27 +19,26 @@ Console.WriteLine("Hello, World!");
 var assetPath = "./";
 var mixinName = "TestVertexStreamFull";
 
-var fs = VirtualFileSystem.MountFileSystem(assetPath, "./Shaders/SDSL/");
+// var fs = VirtualFileSystem.MountFileSystem(assetPath, "./Shaders/SDSL/");
 
-var db = new ObjectDatabase(assetPath,VirtualFileSystem.ApplicationDatabaseIndexName);
-var dbfp = new DatabaseFileProvider(db);
+// var db = new ObjectDatabase(assetPath,VirtualFileSystem.ApplicationDatabaseIndexName);
+// var dbfp = new DatabaseFileProvider(db);
 
-var search = await VirtualFileSystem.ListFiles(assetPath,"*.sdsl",VirtualSearchOption.TopDirectoryOnly);
-var shaderMixinParser = new ShaderMixinParser(dbfp);
-shaderMixinParser.SourceManager.LookupDirectoryList.Add(assetPath);
-foreach(var s in search)
-    shaderMixinParser.SourceManager.AddShaderSource(Path.GetFileNameWithoutExtension(s), new StreamReader(VirtualFileSystem.OpenStream(s, VirtualFileMode.Open,VirtualFileAccess.Read)).ReadToEnd(),s);
+// var search = await VirtualFileSystem.ListFiles(assetPath,"*.sdsl",VirtualSearchOption.TopDirectoryOnly);
+// var shaderMixinParser = new ShaderMixinParser(dbfp);
+// shaderMixinParser.SourceManager.LookupDirectoryList.Add(assetPath);
+// foreach(var s in search)
+//     shaderMixinParser.SourceManager.AddShaderSource(Path.GetFileNameWithoutExtension(s), new StreamReader(VirtualFileSystem.OpenStream(s, VirtualFileMode.Open,VirtualFileAccess.Read)).ReadToEnd(),s);
 
-var source = new ShaderMixinSource();
-source.Mixins.Add(new ShaderClassSource(mixinName));
+// var source = new ShaderMixinSource();
+// source.Mixins.Add(new ShaderClassSource(mixinName));
+// var compiler = new Compiler(source,shaderMixinParser);
 
-var compiler = new Compiler(source,shaderMixinParser);
+// ShaderModule sm = compiler.Compile(StageEntryPoint.VSMain,new Stride.Shaders.ShaderMacro[]{});
 
-ShaderModule sm = compiler.Compile(StageEntryPoint.VSMain,new Stride.Shaders.ShaderMacro[]{});
+// sm.Generate().ToGlsl();
 
-sm.Generate().ToGlsl();
-
-// new TestModule().Construct().Generate().ToGlsl();
+new TestModule().Construct().Generate().ToGlsl();
 
 
 // var vertPath = @".\Shaders\GLSL\tri.frag.spv";

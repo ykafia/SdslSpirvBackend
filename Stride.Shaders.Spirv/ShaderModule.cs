@@ -5,51 +5,82 @@ using Stride.Core.Shaders.Ast;
 using Stride.Core.Shaders.Ast.Stride;
 using StrideVariable = Stride.Core.Shaders.Ast.Variable;
 using Stride.Core.Shaders.Ast.Hlsl;
+using Stride.Shaders.Spirv.Abstraction;
 
 namespace Stride.Shaders.Spirv
 {
     public partial class ShaderModule : Module
     {
         Shader program;
-        Dictionary<string,Instruction> TypeRegister = new();
         (Instruction PtrType,Instruction RawType) InputType;
         (Instruction PtrType,Instruction RawType) OutputType;
         Instruction Streams;
+        Dictionary<string, StructElement> Elements = new();
+        private readonly List<string> dataNames = new();
+        private IEnumerable<string> declaredTypes;
         
         
 
         public ShaderModule(Shader program) : base(Specification.Version)
         {
             this.program = program;
+            foreach(string s in new string[]{"VS","GS","PS","HS","DS","CS"})
+                foreach(string s2 in new string[]{"INPUT","OUPUT","STREAM"})
+                    dataNames.Add(s+"_"+s2);
         }
 
         public ShaderModule Construct(StageEntryPoint entry)
         {
             AddCapability(Capability.Shader);
             SetMemoryModel(AddressingModel.Logical, MemoryModel.Simple);
-            TypeRegister["void"] = TypeVoid();
+            var structTypes = program.Declarations.Where(x => x is StructType type && !dataNames.Contains(type.Name.Text)).Cast<StructType>();
+            declaredTypes = structTypes.Select(x => x.Name.Text);
             // Generate declared types
-            foreach(StructType p in program.Declarations.Where(x => x is StructType))
+            List<string> waitList = new();
+            while(waitList != null)
             {
-                if(p.Name.Text.Contains("INPUT"))
+                var tmpList = new List<string>();
+                foreach(StructType p in structTypes)
                 {
-                    InputType = (TypePointer(StorageClass.Input, GetOrCreateStructType(p)),GetOrCreateStructType(p));
-                    Name(InputType.RawType, p.Name);
+
+                    if(!Elements.ContainsKey(p.Name.Text))
+                    {
+                        var fieldTypes = p.Fields.Select(x => x.Name.Text);
+                        if(fieldTypes.All(x => !declaredTypes.Contains(x)))
+                        {
+                            // Create StructType
+                        }
+                        else
+                        {
+                            var structFields = fieldTypes.Where(declaredTypes.Contains);
+                            if(structFields.All(Elements.ContainsKey))
+                            {
+                                // Create StructType
+                            }
+                            else
+                            {
+                                // tmpList.Add()
+                            }
+                        }
+                    }
+                    // If type is declared but not created
+                    //      If type contains no declared types fields
+                    //          Create type
+                    //      Else
+                    //          If type contains declared fields and not created
+                    //              
+                    // Name(GetOrCreateStructType(p), p.Name);
+                    
                 }
-                else if(p.Name.Text.Contains("OUTPUT"))
-                {
-                    OutputType = (TypePointer(StorageClass.Output, GetOrCreateStructType(p)),GetOrCreateStructType(p));
-                    Name(OutputType.RawType, p.Name);
-                }
-                else if(p.Name.Text.Contains("STREAMS"))
-                {
-                    Streams = GetOrCreateStructType(p);
-                    Name(Streams,p.Name);
-                }
-                else
-                {
-                    Name(GetOrCreateStructType(p), p.Name);
-                }
+                if(tmpList.Count == 0)
+                    waitList = null;
+            }
+            foreach(
+                StructType p in program.Declarations.Where(
+                    x => x is StructType type && dataNames.Contains(type.Name.Text)
+                ))
+            {
+                Name(GetOrCreateStructType(p), p.Name);
             }
             
             
@@ -67,8 +98,8 @@ namespace Stride.Shaders.Spirv
             // Generate Main method
 
             MethodDefinition mainMethod = (MethodDefinition)program.Declarations.First(x => x is MethodDefinition);
-            var mainFunctionType = TypeFunction(TypeRegister["void"],true);
-            var mainFunction = Function(TypeRegister["void"],FunctionControlMask.MaskNone,mainFunctionType);
+            var mainFunctionType = TypeFunction(TypeVoid(),true);
+            var mainFunction = Function(TypeVoid(),FunctionControlMask.MaskNone,mainFunctionType);
             AddLabel(Label());
             Instruction tmpIn = Load(InputType.RawType,inputv);
             Dictionary<string,Instruction> variables = new();
@@ -85,26 +116,19 @@ namespace Stride.Shaders.Spirv
         }
         public Instruction GetOrCreateStructType(StructType s)
         {   
-            
-            if(!TypeRegister.ContainsKey(s.Name.Text))
+            var t = TypeStruct(true,s.Fields.Select(f => GetOrCreateSPVType(f.Type.Name)).ToArray());
+            Name(t,s.Name.Text);
+            for(int i =0; i< s.Fields.Count; i++)
             {
-                TypeRegister.Add(s.Name.Text, TypeStruct(true,s.Fields.Select(f => GetOrCreateSPVType(f.Type.Name)).ToArray()));
-                for(int i =0; i< s.Fields.Count; i++)
-                {
-                    MemberName(TypeRegister[s.Name.Text],i,s.Fields[i].Name.Text);
-                }
+                MemberName(t,i,s.Fields[i].Name.Text);
             }
-            return TypeRegister[s.Name.Text];
+            return t;
         }
-        public Instruction GetOrCreateSPVType(string t)
+        public Instruction GetOrCreateSPVType(string name)
         {
-            if(TypeRegister.ContainsKey(t))
-            {
-                return TypeRegister[t];
-            }
             // TODO : Create type instruction SPV
-            TypeRegister[t] = SDSLTypeToSPVType(t);
-            return TypeRegister[t];
+            var t = SDSLTypeToSPVType(name);
+            return t;
         }
 
         private Instruction SDSLTypeToSPVType(string name)
@@ -148,6 +172,7 @@ namespace Stride.Shaders.Spirv
                         // declaration = ConstantComposite(vType, );
                         variables.Add(pvar.Name.Text,variable);
                         AddLocalVariable(variable);
+                        // Function(TypePointer(StorageClass.Generic,vType),FunctionControlMask.MaskNone,
                         // Store(variable,new Instruction(Op.OpConstant));
                     }
                 }
