@@ -39,7 +39,7 @@ var classSource = shaderMixinParser.SourceManager.LoadShaderSource(mixinName);
 
 // ShaderModule sm = compiler.Compile(StageEntryPoint.VSMain,new Stride.Shaders.ShaderMacro[]{});
 
-sm.Generate().ToGlsl();
+// sm.Generate().ToGlsl();
 
 // new TestModule().Construct().Generate().ToGlsl();
 
