@@ -1,10 +1,12 @@
 shader TestVertexStreamFull
 {
+    struct MyStructRef
+    {
+        float z;
+    };
     struct MyStruct
     {
-        float a;
-        float b;
-        float c;
+        MyStructRef ref;
     };
     stream MyStruct Position;
     stream float4 ScreenPosition;

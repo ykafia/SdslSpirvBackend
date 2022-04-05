@@ -25,24 +25,33 @@ namespace TestStrideSpirv
                 Instruction outputColor = Variable(vec4OutputPtrType, StorageClass.Output);
 
                 Instruction structType = TypeStruct(true,vec4Type, vec4Type);
-                TypePointer(StorageClass.Function,structType,false);
+                var structPointer = TypePointer(StorageClass.Function,structType,false);
                 Name(structType,"MyStruct");
                 MemberName(structType,0,"x");
                 MemberName(structType,1,"y");
-                Instruction structType2 = TypeStruct(true,vec4Type, vec4Type);
+                Instruction structType2 = TypeStruct(false, structType);
                 TypePointer(StorageClass.Function,structType2,false);
-                Name(structType2,"MyStruct");
-                MemberName(structType2,0,"x");
-                MemberName(structType2,1,"z");
+                Name(structType2,"MyStruct2");
+                // MemberName(structType2,0,"x");
+                // MemberName(structType2,1,"z");
+                MemberName(structType2,0,"something");
+
+                var structVariable = Variable(structType2,StorageClass.Generic);
+                
+
+                
                 
 
                 Name(inputTest, "inputTest");
                 Name(outputColor, "outputColor");
                 Name(someVar, "my_var");
+                Name(outputTest, "sqrtVal");
                 AddGlobalVariable(inputTest);
                 AddGlobalVariable(outputTest);
                 AddGlobalVariable(outputColor);
                 AddLocalVariable(someVar);
+                Name(structVariable, "dondo2");
+                AddLocalVariable(structVariable);
 
                 Instruction rColor = Constant(floatType, 0.5f);
                 Instruction gColor = Constant(floatType, 0.0f);
@@ -60,7 +69,7 @@ namespace TestStrideSpirv
                 Instruction tempInput = Load(floatType, inputTest);
 
                 Instruction resultSqrt = GlslSqrt(floatType, tempInput);
-
+                
                 Store(someVar, Constant(floatType,0.0));
                 Store(outputTest, resultSqrt);
                 Store(outputColor, compositeColor);

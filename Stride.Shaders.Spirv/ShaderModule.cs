@@ -5,7 +5,6 @@ using Stride.Core.Shaders.Ast;
 using Stride.Core.Shaders.Ast.Stride;
 using StrideVariable = Stride.Core.Shaders.Ast.Variable;
 using Stride.Core.Shaders.Ast.Hlsl;
-using Stride.Shaders.Spirv.Abstraction;
 
 namespace Stride.Shaders.Spirv
 {
@@ -15,73 +14,30 @@ namespace Stride.Shaders.Spirv
         (Instruction PtrType,Instruction RawType) InputType;
         (Instruction PtrType,Instruction RawType) OutputType;
         Instruction Streams;
-        Dictionary<string, StructElement> Elements = new();
-        private readonly List<string> dataNames = new();
-        private IEnumerable<string> declaredTypes;
+        public Dictionary<string, StructElement> Elements = new();
         
         
 
         public ShaderModule(Shader program) : base(Specification.Version)
         {
             this.program = program;
-            foreach(string s in new string[]{"VS","GS","PS","HS","DS","CS"})
-                foreach(string s2 in new string[]{"INPUT","OUPUT","STREAM"})
-                    dataNames.Add(s+"_"+s2);
         }
 
         public ShaderModule Construct(StageEntryPoint entry)
         {
             AddCapability(Capability.Shader);
             SetMemoryModel(AddressingModel.Logical, MemoryModel.Simple);
-            var structTypes = program.Declarations.Where(x => x is StructType type && !dataNames.Contains(type.Name.Text)).Cast<StructType>();
-            declaredTypes = structTypes.Select(x => x.Name.Text);
+            // var structTypes = program.Declarations.Where(x => x is StructType type && !dataNames.Contains(type.Name.Text)).Cast<StructType>();
             // Generate declared types
-            List<string> waitList = new();
-            while(waitList != null)
+            
+            foreach(StructType p in program.Declarations.Where(x => x is StructType))
             {
-                var tmpList = new List<string>();
-                foreach(StructType p in structTypes)
+                if(new List<string>{"_STREAMS","_INPUT","_OUTPUT"}.All(x => !p.Name.Text.EndsWith(x)))
                 {
-
-                    if(!Elements.ContainsKey(p.Name.Text))
-                    {
-                        var fieldTypes = p.Fields.Select(x => x.Name.Text);
-                        if(fieldTypes.All(x => !declaredTypes.Contains(x)))
-                        {
-                            // Create StructType
-                        }
-                        else
-                        {
-                            var structFields = fieldTypes.Where(declaredTypes.Contains);
-                            if(structFields.All(Elements.ContainsKey))
-                            {
-                                // Create StructType
-                            }
-                            else
-                            {
-                                // tmpList.Add()
-                            }
-                        }
-                    }
-                    // If type is declared but not created
-                    //      If type contains no declared types fields
-                    //          Create type
-                    //      Else
-                    //          If type contains declared fields and not created
-                    //              
-                    // Name(GetOrCreateStructType(p), p.Name);
-                    
+                    Elements[p.Name.Text] = new StructElement(this,p);
                 }
-                if(tmpList.Count == 0)
-                    waitList = null;
             }
-            foreach(
-                StructType p in program.Declarations.Where(
-                    x => x is StructType type && dataNames.Contains(type.Name.Text)
-                ))
-            {
-                Name(GetOrCreateStructType(p), p.Name);
-            }
+            
             
             
 
@@ -114,41 +70,33 @@ namespace Stride.Shaders.Spirv
             return this;
             // TODO: add void function
         }
-        public Instruction GetOrCreateStructType(StructType s)
-        {   
-            var t = TypeStruct(true,s.Fields.Select(f => GetOrCreateSPVType(f.Type.Name)).ToArray());
-            Name(t,s.Name.Text);
-            for(int i =0; i< s.Fields.Count; i++)
-            {
-                MemberName(t,i,s.Fields[i].Name.Text);
-            }
-            return t;
-        }
-        public Instruction GetOrCreateSPVType(string name)
+        public FieldElement GetOrCreateSPVType(string name)
         {
             // TODO : Create type instruction SPV
             var t = SDSLTypeToSPVType(name);
             return t;
         }
 
-        private Instruction SDSLTypeToSPVType(string name)
+        public bool IsStructType(string name) => Elements.ContainsKey(name); 
+
+        private FieldElement SDSLTypeToSPVType(string name)
         {
             return name switch 
             {
-                "half" => TypeFloat(16),
-                "float" => TypeFloat(32),
-                "double" => TypeFloat(64),
-                "ushort" => TypeInt(16,0),
-                "uint" => TypeInt(32,0),
-                "ulong" => TypeInt(64,0),
-                "short" => TypeInt(16,1),
-                "int" => TypeInt(32,1),
-                "long" => TypeInt(64,1),
-                "byte" => TypeInt(0,1),
-                "sbyte" => TypeInt(8,1),
-                "float2" => TypeVector(GetOrCreateSPVType("float"),2),
-                "float3" => TypeVector(GetOrCreateSPVType("float"),3),
-                "float4" => TypeVector(GetOrCreateSPVType("float"),4),
+                "half" => new FieldElement{ValueType = name, RawType = TypeFloat(16), ZeroValue = Constant(TypeFloat(16),0.0)},
+                "double" => new FieldElement{ValueType = name, RawType = TypeFloat(64), ZeroValue = Constant(TypeFloat(64),0.0)},
+                "ushort" => new FieldElement{ValueType = name, RawType = TypeInt(16,0), ZeroValue = Constant(TypeInt(16,0),0.0)},
+                "uint" => new FieldElement{ValueType = name, RawType = TypeInt(32,0), ZeroValue = Constant(TypeInt(32,0),0.0)},
+                "ulong" => new FieldElement{ValueType = name, RawType = TypeInt(64,0), ZeroValue = Constant(TypeInt(64,0),0.0)},
+                "short" => new FieldElement{ValueType = name, RawType = TypeInt(16,1), ZeroValue = Constant(TypeInt(16,1),0.0)},
+                "int" => new FieldElement{ValueType = name, RawType = TypeInt(32,1), ZeroValue = Constant(TypeInt(32,1),0.0)},
+                "long" => new FieldElement{ValueType = name, RawType = TypeInt(64,1), ZeroValue = Constant(TypeInt(64,1),0.0)},
+                "byte" => new FieldElement{ValueType = name, RawType = TypeInt(8,0), ZeroValue = Constant(TypeInt(8,0),0.0)},
+                "sbyte" =>  new FieldElement{ValueType = name, RawType = TypeInt(8,1), ZeroValue = Constant(TypeInt(8,1),0.0)},
+                "float" => new FieldElement{ValueType = name, RawType = TypeFloat(32), ZeroValue = Constant(TypeFloat(32),0.0)},
+                "float2" => new FieldElement{ValueType = name, RawType = TypeVector(TypeFloat(32),2), ZeroValue = Constant(TypeVector(TypeFloat(32),2),0.0)},
+                "float3" => new FieldElement{ValueType = name, RawType = TypeVector(TypeFloat(32),3), ZeroValue = Constant(TypeVector(TypeFloat(32),3),0.0)},
+                "float4" => new FieldElement{ValueType = name, RawType = TypeVector(TypeFloat(32),3), ZeroValue = Constant(TypeVector(TypeFloat(32),4),0.0)},
                 _ => throw new Exception("Type not found")
             };
         }
@@ -158,7 +106,7 @@ namespace Stride.Shaders.Spirv
             {
                 var pvar = ((Variable)ds.Content);
                 var vType = GetOrCreateSPVType(pvar.Type.Name.Text);
-                var variable = Variable(vType,StorageClass.Generic);
+                var variable = Variable(vType.RawType,StorageClass.Generic);
                 Name(variable, pvar.Name.Text);
 
 
