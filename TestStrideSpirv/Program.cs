@@ -32,9 +32,12 @@ foreach(var s in search)
 
 var source = new ShaderMixinSource();
 source.Mixins.Add(new ShaderClassSource(mixinName));
-var compiler = new Compiler(source,shaderMixinParser);
-shaderMixinParser.ParseA
-ShaderModule sm = compiler.Compile(StageEntryPoint.VSMain,new Stride.Shaders.ShaderMacro[]{});
+
+var classSource = shaderMixinParser.SourceManager.LoadShaderSource(mixinName);
+
+// var compiler = new Compiler(source,shaderMixinParser);
+
+// ShaderModule sm = compiler.Compile(StageEntryPoint.VSMain,new Stride.Shaders.ShaderMacro[]{});
 
 sm.Generate().ToGlsl();
 
