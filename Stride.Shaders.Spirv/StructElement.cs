@@ -4,53 +4,87 @@ using static Spv.Specification;
 
 namespace Stride.Shaders.Spirv
 {
-    public interface ValueElement{}
+    public interface IValueElement{}
 
-    public class FieldElement : ValueElement
+    public class FieldElement : IValueElement
     {
         public string Name;
         public string ValueType;
+        public int Index;
         public Instruction RawType;
         public bool IsComposite;
         public Instruction ZeroValue;
-        
     }
-    public class StructElement : ValueElement
+    public class StructElement : IValueElement
     {
         public string Name;
+        public string ValueType;
+        public int Index;
         public Instruction RawType;
         public bool IsComposite;
-        public Dictionary<string, ValueElement> Fields = new();
+        public Dictionary<string, IValueElement> Fields = new();
+        public StructElement(){}
         public StructElement(ShaderModule program, StructType s)
         {
-
-            Name = s.Name.Text;
-            RawType = program.TypeStruct(
-                false,
-                // If field is basic or is struct
-                s.Fields.Select(f => {
-                    if(program.IsStructType(f.Name.Text))
+            ValueType = s.Name.Text;
+            var fields = 
+                s.Fields.Select((f,i) => {
+                    if(program.IsStructType(f.Type.Name.Text))
                     {
                         // Add struct type
-                        Fields.Add(f.Name.Text, new FieldElement{Name = f.Name.Text, ValueType = f.Type.Name.Text,RawType = program.Elements[f.Name.Text].RawType});
-                        return program.Elements[f.Name.Text].RawType;
+                        if(!program.Elements.ContainsKey(f.Type.Name.Text))
+                        {
+                            program.Elements[f.Type.Name.Text] = new StructElement(program, program.GetStructType(f.Type.Name.Text));   
+                        }
+                        Fields.Add(f.Name.Text, program.Elements[f.Type.Name.Text]);
+                        return program.Elements[f.Type.Name.Text].RawType;
+                        
                     }
                     else
                     {
-                        var tmp = program.GetOrCreateSPVType(f.Type.Name.Text);
+                        FieldElement tmp = program.GetOrCreateSPVType(f.Type.Name.Text) as FieldElement;
                         tmp.Name = f.Name.Text;
+                        tmp.Index = i;
                         Fields.Add(f.Name.Text, tmp);
                         return tmp.RawType;
                     }
-                }).ToArray()
+                }).ToArray();
+            RawType = program.TypeStruct(
+                true,
+                fields
             );
             
             // Name struct and members
-            program.Name(RawType, Name);
+            program.Name(RawType, ValueType);
             for(int i = 0; i< s.Fields.Count; i++)
             {
                 program.MemberName(this.RawType, i, s.Fields[i].Name.Text);
             }
-        }        
+            if(s.Name.Text.Contains("S_INPUT"))
+                program.InputType = this;
+            else if(s.Name.Text.Contains("S_OUTPUT"))
+                program.OutputType = this;
+        }
+        public void GetAllAccessChains(ref Dictionary<string,AccessChainData> accessChains, IEnumerable<int> indices, string parentName = "")
+        {
+            var name = parentName + ".";
+            foreach(var f in Fields)
+            {
+                if(f.Value is FieldElement fe)
+                {
+                    var a = new AccessChainData
+                    {
+                        Indices = indices.Append(fe.Index),
+                        StructPath = name + fe.Name,
+                        Element = fe
+                    };
+                    accessChains.Add(a.StructPath ?? "", a);
+                }
+                else if(f.Value is StructElement se)
+                {
+                    se.GetAllAccessChains(ref accessChains, indices.Append(se.Index), name + f.Key);
+                }
+            }
+        }
     }
 }

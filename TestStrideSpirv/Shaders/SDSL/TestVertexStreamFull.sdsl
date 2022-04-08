@@ -1,20 +1,24 @@
 shader TestVertexStreamFull
 {
-    struct MyStructRef
-    {
-        float z;
-    };
-    struct MyStruct
-    {
-        MyStructRef ref;
-    };
-    stream MyStruct Position;
-    stream float4 ScreenPosition;
+    // struct MyStruct
+    // {
+    //     float x;
+    //     float y;
+    //     float z;
+    // };
+    // struct MyStruct
+    // {
+    //     MyStructRef ref;
+    //     float pos;
+    // };
+    // stream MyStruct Position;
+    stream float ScreenPosition;
 
     void VSMain()
     {
-        float x = 1.0;
-        MyStruct myPos = streams.Position;
-        streams.ScreenPosition.x = 2.0 * myPos.a;
+        // float x = 1.0;
+        // MyStruct myPos;
+        // streams.ScreenPosition.x = 2.0 * myPos.a;
+        streams.ScreenPosition = 0.0;
     }
 };

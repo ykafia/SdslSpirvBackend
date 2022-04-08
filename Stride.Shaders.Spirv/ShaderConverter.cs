@@ -5,17 +5,18 @@ namespace TestStrideSpirv
 {
     public unsafe static class ShaderConverter
     {
-        public static void ToHlsl(byte[] bytecode)
+        private static string GetString(byte* ptr)
+        {
+            int length = 0;
+            while (length < 4096 && ptr[length] != 0)
+                length++;
+            // Decode UTF-8 bytes to string.
+            return System.Text.Encoding.UTF8.GetString(ptr, length);
+        }
+        public static string ToHlsl(this byte[] bytecode)
         {
 
-            string GetString(byte* ptr)
-            {
-                int length = 0;
-                while (length < 4096 && ptr[length] != 0)
-                    length++;
-                // Decode UTF-8 bytes to string.
-                return System.Text.Encoding.UTF8.GetString(ptr, length);
-            }
+            
             SpvId* spirv = null;
             fixed (byte* ptr = bytecode)
                 spirv = (SpvId*)ptr;
@@ -78,25 +79,18 @@ namespace TestStrideSpirv
             spvResult = spvc_compiler_compile(compiler_glsl, (byte*)&result);
             if (spvResult != spvc_result.SPVC_SUCCESS)
                 throw new System.Exception("Error giving ownership of IR : " + spvResult);
-            Console.WriteLine("Cross-compiled source: {0}", GetString(result));
-
+            
+            // Console.WriteLine("Cross-compiled source: {0}", GetString(result));
+            string shaderCode = GetString(result);
             // Frees all memory we allocated so far.
             spvc_context_destroy(context);
+            return shaderCode;
         }
 
 
 
-        public static void ToGlsl(byte[] bytecode)
+        public static string ToGlsl(this byte[] bytecode)
         {
-
-            string GetString(byte* ptr)
-            {
-                int length = 0;
-                while (length < 4096 && ptr[length] != 0)
-                    length++;
-                // Decode UTF-8 bytes to string.
-                return System.Text.Encoding.UTF8.GetString(ptr, length);
-            }
             SpvId* spirv = null;
             fixed (byte* ptr = bytecode)
                 spirv = (SpvId*)ptr;
@@ -119,10 +113,13 @@ namespace TestStrideSpirv
             spvc_context_set_error_callback(context, error_callback, null);
 
             // Parse the SPIR-V.
-            spvc_context_parse_spirv(context, spirv, word_count, &ir);
-
+            var spvResult = spvc_context_parse_spirv(context, spirv, word_count, &ir);
+            
+            if(spvResult != spvc_result.SPVC_SUCCESS)
+                throw new Exception("Could not parse IR : " + spvResult);
+            
             // Hand it off to a compiler instance and give it ownership of the IR.
-            var spvResult = spvc_context_create_compiler(context, spvc_backend.Glsl, ir, spvc_capture_mode.TakeOwnership, &compiler_glsl);
+            spvResult = spvc_context_create_compiler(context, spvc_backend.Glsl, ir, spvc_capture_mode.TakeOwnership, &compiler_glsl);
             if (spvResult != spvc_result.SPVC_SUCCESS)
                 throw new System.Exception("Error giving ownership of IR : " + spvResult);
 
@@ -160,12 +157,13 @@ namespace TestStrideSpirv
             if (spvResult != spvc_result.SPVC_SUCCESS)
                 throw new System.Exception("Error giving ownership of IR : " + spvResult);
             Console.WriteLine("Cross-compiled source: {0}", GetString(result));
-
+            var shaderCode = GetString(result);
             // Frees all memory we allocated so far.
             spvc_context_destroy(context);
+            return shaderCode;
         }
 
-        public static void ToJson(byte[] bytecode)
+        public static string ToJson(byte[] bytecode)
         {
 
             string GetString(byte* ptr)
@@ -240,8 +238,10 @@ namespace TestStrideSpirv
                 throw new System.Exception("Error giving ownership of IR : " + spvResult);
             Console.WriteLine("Cross-compiled source: {0}", GetString(result));
 
+            var shaderCode = GetString(result);
             // Frees all memory we allocated so far.
             spvc_context_destroy(context);
+            return shaderCode;
         }
     }
 }

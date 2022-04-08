@@ -1,18 +1,14 @@
 #version 450
 
-struct MyStruct
+struct VS_STREAMS
 {
-    vec3 toto;
-    vec2 dodo;
-};
-struct MyStruct2
-{
-    MyStruct ref1;
+    float ScreenPosition;
 };
 
 layout(location = 0) out vec4 outColor;
 
 void main() {
-    MyStruct2 dondo;
-    outColor = vec4(1.0,dondo.ref1.toto);
+    VS_STREAMS dondo;
+    dondo.ScreenPosition = 0;
+    outColor = vec4(1.0,1.0,1.0,dondo.ScreenPosition);
 }
