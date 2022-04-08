@@ -44,13 +44,11 @@ namespace Stride.Shaders.Spirv
             Instruction outputv = Variable(TypePointer(StorageClass.Output, OutputType.RawType,true), StorageClass.Output);
 
             
-            Instruction vec4Var = Variable(TypePointer(StorageClass.Function,TypeVector(TypeFloat(32),4),true), StorageClass.Output);
             
             Name(inputv, "input");
             Name(outputv, "output");
             AddGlobalVariable(inputv);
             AddGlobalVariable(outputv);
-            AddLocalVariable(vec4Var);
 
             // Generate Main method
 
@@ -59,34 +57,38 @@ namespace Stride.Shaders.Spirv
             Instruction mainFunctionType = TypeFunction(voidType, true);
             Instruction mainFunction = Function(voidType, FunctionControlMask.MaskNone, mainFunctionType);
             AddLabel(Label());
-            Instruction tmpIn = Load(InputType.RawType,inputv);
+
+            // var chains = new Dictionary<string,AccessChainData>();
+            // var streamsType = Elements["VS_STREAMS"];
+            // streamsType.GetAllAccessChains(ref chains, new List<int>(),"myVar");
+            // var tptr = TypePointer(StorageClass.Function,streamsType.RawType);
+            // var vstreams = Variable(tptr,StorageClass.Function);
+            // AddLocalVariable(vstreams);
+
+            // Instruction vec4Var = Variable(TypePointer(StorageClass.Function,TypeVector(TypeFloat(32),4),true), StorageClass.Function);
+            // AddLocalVariable(vec4Var);
+
+            // Instruction tmpIn = Load(InputType.RawType,inputv);
             Dictionary<string,Instruction> variables = new();
-            // foreach(var s in mainMethod.Body.Statements)
-            // {
-            //     ConvertStatement(s, ref variables);
-            // }
-            var chains = new Dictionary<string,AccessChainData>();
-            var streamsType = Elements["VS_STREAMS"];
-            streamsType.GetAllAccessChains(ref chains, new List<int>(),"myVar");
-            var tptr = TypePointer(StorageClass.Function,streamsType.RawType);
-            var vstreams = Variable(tptr,StorageClass.Function);
-            AddLocalVariable(vstreams);
+            foreach(var s in mainMethod.Body.Statements)
+            {
+                ConvertStatement(s, ref variables);
+            }
+            
 
-            var zero = ConstantOf(0);
-            var zero4 = ConstantOf("float4",0f,0,1,0);
-            var ptrFloatType = TypePointer(StorageClass.Function, TypeFloat(32));
-            var access = AccessChain(ptrFloatType,vstreams, zero);
-
-            var ptr = Load(TypeFloat(32),access);
-            var cst = ConstantOf(0f);
-            Store(ptr,cst);
-            Store(vec4Var,zero4);
+            // var zero = ConstantOf(0);
+            // var zero4 = ConstantOf("float4",0f,0,1,0);
+            // var ptrFloatType = TypePointer(StorageClass.Function, TypeFloat(32));
+            // var access = AccessChain(ptrFloatType,vstreams, zero);
+            // var cst = ConstantOf(0f);
+            // Store(access,cst);
+            // Store(vec4Var,zero4);
             
 
             Return();
             FunctionEnd();
             AddEntryPoint(ExecutionModel.Vertex, mainFunction, "main", inputv, outputv);
-            AddExecutionMode(mainFunction, ExecutionMode.OriginUpperLeft);
+            // AddExecutionMode(mainFunction, ExecutionMode.OriginUpperLeft);
             return Generate();
         }
         public IValueElement GetOrCreateSPVType(string name)

@@ -10,6 +10,17 @@ namespace Stride.Shaders.Spirv
 {
     public partial class ShaderModule
     {
+        private Instruction ZeroOf(string type)
+        {
+            return type switch
+            {
+                ("float") or ("int") => ConstantOf(type, 0),
+                ("float2") or ("int2") => ConstantOf(type, 0,0),
+                ("float3") or ("int3") => ConstantOf(type, 0,0,0),
+                ("float4") or ("int4") => ConstantOf(type, 0,0,0,0),
+                _ => throw new NotImplementedException()
+            };
+        }
         private Instruction ConstantOf(string type, params float[] values)
         {
             return type switch

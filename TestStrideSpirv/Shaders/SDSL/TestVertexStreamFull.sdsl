@@ -12,9 +12,9 @@ shader TestVertexStreamFull
     //     float pos;
     // };
     // stream MyStruct Position;
-    stream float ScreenPosition;
+    stage stream float ScreenPosition;
 
-    void VSMain()
+    stage void VSMain()
     {
         // float x = 1.0;
         // MyStruct myPos;

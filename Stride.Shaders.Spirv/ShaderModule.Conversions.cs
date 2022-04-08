@@ -21,20 +21,25 @@ namespace Stride.Shaders.Spirv
                     Expression expr = ((Variable)ds.Content).InitialValue;
                     if(expr is CastExpression cexp && Elements.ContainsKey(cexp.Target.Name.Text))
                     {
-                        var variable = Variable(st.RawType,StorageClass.Generic);
+                        var variable = Variable(st.RawType,StorageClass.Function);
                         Name(variable, pvar.Name.Text);
                         // if(cexp.Target. is Literal l)
                         if(cexp.From is LiteralExpression l && (int)l.Literal.Value == 0)
                         {
-                            variables.Add(pvar.Name.Text,variable);
-                            AddLocalVariable(variable);
+                            var stType = Elements[cexp.Target.Name.Text];
                             var chains = new Dictionary<string,AccessChainData>();
-                            Elements[cexp.Target.Name.Text].GetAllAccessChains(ref chains,new List<int>(),pvar.Name.Text);
+                            stType.GetAllAccessChains(ref chains,new List<int>(),pvar.Name.Text);
+                            // var streamsType = Elements["VS_STREAMS"];
+                            // streamsType.GetAllAccessChains(ref chains, new List<int>(),"myVar");
+                            var tptr = TypePointer(StorageClass.Function,stType.RawType);
+                            var variablePointer = Variable(tptr,StorageClass.Function);
+                            Name(variablePointer,pvar.Name.Text);
+                            AddLocalVariable(variablePointer);
                             foreach(var chain in chains.Values)
                             {
                                 var typePointer = TypePointer(StorageClass.Function, chain.Element.RawType);
-                                var access = AccessChain(typePointer, st.RawType, chain.Indices.Select(x => Constant(TypeInt(32,1),x)).ToArray());
-                                Store(access,chain.Element.ZeroValue);
+                                var access = AccessChain(typePointer, variablePointer, ConstantOf(chain.Indices.ToArray()));
+                                Store(access,ZeroOf(chain.Element.ValueType));
                             }
                             // foreach(var accessChain in Elements[cexp.Target.Name.Text].)
                         }
