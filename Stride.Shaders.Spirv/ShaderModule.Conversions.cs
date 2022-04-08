@@ -14,11 +14,11 @@ namespace Stride.Shaders.Spirv
         {
             if(s is DeclarationStatement ds)
             {
-                var pvar = ((Variable)ds.Content);
+                var pvar = (StrideVariable)ds.Content;
                 var vType = GetOrCreateSPVType(pvar.Type.Name.Text);
                 if(vType is StructElement st)
                 {
-                    Expression expr = ((Variable)ds.Content).InitialValue;
+                    Expression expr = ((StrideVariable)ds.Content).InitialValue;
                     if(expr is CastExpression cexp && Elements.ContainsKey(cexp.Target.Name.Text))
                     {
                         var variable = Variable(st.RawType,StorageClass.Function);
@@ -44,6 +44,20 @@ namespace Stride.Shaders.Spirv
                             // foreach(var accessChain in Elements[cexp.Target.Name.Text].)
                         }
                     }
+                }
+                else
+                {
+                    Console.WriteLine("Something");
+                    var rawType = ((FieldElement)vType).RawType;
+                    var variable = Variable(rawType,StorageClass.Function);
+                    Name(variable, pvar.Name.Text);
+                    var content = (StrideVariable)ds.Content;
+                    if(content.InitialValue is MethodInvocationExpression mie)
+                    {
+                        // TODO : manage expressions
+                        var args = mie.Arguments;
+                    }
+                    // Store(variable, ConstantOf(((StrideVariable)ds.Content).InitialValue)
                 }
                 // new Instruction(Op.OpPtrCastToGeneric)
 

@@ -16,9 +16,9 @@ shader TestVertexStreamFull
 
     stage void VSMain()
     {
-        // float x = 1.0;
+        float2 x = float2(0,1);
         // MyStruct myPos;
         // streams.ScreenPosition.x = 2.0 * myPos.a;
-        streams.ScreenPosition = 0.0;
+        streams.ScreenPosition = x;
     }
 };
